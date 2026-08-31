@@ -1,0 +1,175 @@
+"use client";
+
+import { useEffect, useState, type FormEvent } from "react";
+import { apiFetch, resolveMediaUrl, ApiError } from "@/lib/api";
+import { useRestaurant } from "@/lib/restaurant";
+import { formatPrice } from "@/lib/format";
+import { Button, Card, ErrorText, Field, Input, Textarea } from "@/components/ui";
+import type { Category, Eat } from "@/lib/types";
+
+export default function MenuPage() {
+  const { current, loading: restaurantLoading } = useRestaurant();
+  const [eats, setEats] = useState<Eat[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [price, setPrice] = useState("");
+  const [categoryId, setCategoryId] = useState<string>("");
+  const [image, setImage] = useState<File | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [checkingId, setCheckingId] = useState<number | null>(null);
+
+  const load = async () => {
+    if (!current) return;
+    setLoading(true);
+    const [eatsData, categoriesData] = await Promise.all([
+      apiFetch<{ results: Eat[] }>(`/api/eat/?restaurant=${current.id}`),
+      apiFetch<{ results: Category[] }>(`/api/eat/category/?restaurant=${current.id}`),
+    ]);
+    setEats(eatsData.results);
+    setCategories(categoriesData.results);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- reload when the selected restaurant changes
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current]);
+
+  const resetForm = () => {
+    setName("");
+    setDescription("");
+    setPrice("");
+    setCategoryId("");
+    setImage(null);
+  };
+
+  const onCreate = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!current || !image) return;
+    setError(null);
+    setSubmitting(true);
+    try {
+      const form = new FormData();
+      form.append("restaurant", String(current.id));
+      form.append("name", name);
+      form.append("description", description);
+      form.append("price", price);
+      if (categoryId) form.append("category", categoryId);
+      form.append("image", image);
+
+      await apiFetch("/api/eat/", { method: "POST", body: form, isForm: true });
+      resetForm();
+      await load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Xatolik yuz berdi.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const checkModel = async (eat: Eat) => {
+    setCheckingId(eat.id);
+    try {
+      await apiFetch(`/api/eat/check-model/${eat.id}/`);
+    } finally {
+      await load();
+      setCheckingId(null);
+    }
+  };
+
+  const remove = async (eat: Eat) => {
+    if (!confirm(`"${eat.name}" o'chirilsinmi?`)) return;
+    await apiFetch(`/api/eat/${eat.id}/`, { method: "DELETE" });
+    await load();
+  };
+
+  if (restaurantLoading) return <p className="text-sm text-neutral-400">Yuklanmoqda...</p>;
+  if (!current) return <p className="text-sm text-neutral-500">Avval restoran yarating.</p>;
+
+  return (
+    <div className="flex max-w-4xl flex-col gap-4">
+      <h1 className="text-lg font-bold text-neutral-900">Taomlar</h1>
+
+      <Card>
+        <form onSubmit={onCreate} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Field label="Nomi">
+            <Input value={name} onChange={(e) => setName(e.target.value)} required />
+          </Field>
+          <Field label="Narxi (so'm)">
+            <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} required min={0} step="0.01" />
+          </Field>
+          <Field label="Kategoriya">
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="rounded-lg border border-neutral-200 px-3 py-2 text-sm"
+            >
+              <option value="">Kategoriyasiz</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Rasm">
+            <Input type="file" accept="image/*" onChange={(e) => setImage(e.target.files?.[0] ?? null)} required />
+          </Field>
+          <div className="sm:col-span-2">
+            <Field label="Tavsif">
+              <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} required minLength={5} />
+            </Field>
+          </div>
+          <div className="sm:col-span-2 flex flex-col gap-2">
+            <ErrorText>{error}</ErrorText>
+            <Button type="submit" disabled={submitting} className="self-start">
+              {submitting ? "Yuklanmoqda..." : "Qo'shish (3D generatsiya avtomatik boshlanadi)"}
+            </Button>
+          </div>
+        </form>
+      </Card>
+
+      {loading ? (
+        <p className="text-sm text-neutral-400">Yuklanmoqda...</p>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+          {eats.map((eat) => {
+            const imageUrl = resolveMediaUrl(eat.image);
+            return (
+              <Card key={eat.id} className="flex flex-col gap-2 p-3">
+                {imageUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={imageUrl} alt={eat.name} className="aspect-square w-full rounded-lg object-cover" />
+                )}
+                <p className="text-sm font-semibold">{eat.name}</p>
+                <p className="text-xs text-neutral-500">{formatPrice(eat.price)}</p>
+                <p className="text-xs">
+                  3D:{" "}
+                  <span className={eat.model_url ? "text-green-600" : "text-amber-600"}>
+                    {eat.model_url ? "tayyor" : eat.model_status}
+                  </span>
+                </p>
+                <div className="flex gap-2">
+                  {!eat.model_url && (
+                    <Button variant="secondary" onClick={() => checkModel(eat)} disabled={checkingId === eat.id}>
+                      {checkingId === eat.id ? "..." : "Tekshirish"}
+                    </Button>
+                  )}
+                  <Button variant="danger" onClick={() => remove(eat)}>
+                    O&apos;chirish
+                  </Button>
+                </div>
+              </Card>
+            );
+          })}
+          {eats.length === 0 && <p className="text-sm text-neutral-400">Hozircha taom yo&apos;q.</p>}
+        </div>
+      )}
+    </div>
+  );
+}

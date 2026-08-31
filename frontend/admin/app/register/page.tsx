@@ -1,0 +1,62 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth";
+import { ApiError } from "@/lib/api";
+import { Button, Card, ErrorText, Field, Input } from "@/components/ui";
+
+export default function RegisterPage() {
+  const { register } = useAuth();
+  const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      await register(username, email, password);
+      router.push("/restaurant");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Ro'yxatdan o'tishda xatolik yuz berdi.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <main className="flex min-h-screen items-center justify-center p-4">
+      <Card className="w-full max-w-sm">
+        <h1 className="mb-1 text-lg font-bold text-neutral-900">Restoran egasi sifatida ro&apos;yxatdan o&apos;tish</h1>
+        <p className="mb-4 text-sm text-neutral-500">Ro&apos;yxatdan o&apos;tgach, o&apos;z restoraningizni yaratasiz.</p>
+        <form onSubmit={onSubmit} className="flex flex-col gap-3">
+          <Field label="Login">
+            <Input value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus />
+          </Field>
+          <Field label="Email">
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </Field>
+          <Field label="Parol">
+            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
+          </Field>
+          <ErrorText>{error}</ErrorText>
+          <Button type="submit" disabled={submitting}>
+            {submitting ? "Yuborilmoqda..." : "Ro'yxatdan o'tish"}
+          </Button>
+        </form>
+        <p className="mt-4 text-center text-sm text-neutral-500">
+          Hisobingiz bormi?{" "}
+          <Link href="/login" className="font-medium text-neutral-900 underline">
+            Kirish
+          </Link>
+        </p>
+      </Card>
+    </main>
+  );
+}
