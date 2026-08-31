@@ -31,7 +31,8 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-sm">
-        <h1 className="mb-4 text-lg font-bold text-neutral-900">Menu3D — Admin panel</h1>
+        <h1 className="mb-1 font-[family-name:var(--font-display)] text-xl italic text-[var(--ink)]">Menu3D</h1>
+        <p className="mb-5 text-sm text-[var(--ink-muted)]">Restoran admin panel</p>
         <form onSubmit={onSubmit} className="flex flex-col gap-3">
           <Field label="Login">
             <Input value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus />
@@ -44,9 +45,9 @@ export default function LoginPage() {
             {submitting ? "Kirilmoqda..." : "Kirish"}
           </Button>
         </form>
-        <p className="mt-4 text-center text-sm text-neutral-500">
+        <p className="mt-4 text-center text-sm text-[var(--ink-muted)]">
           Hisobingiz yo&apos;qmi?{" "}
-          <Link href="/register" className="font-medium text-neutral-900 underline">
+          <Link href="/register" className="font-medium text-[var(--ink)] underline">
             Ro&apos;yxatdan o&apos;tish
           </Link>
         </p>

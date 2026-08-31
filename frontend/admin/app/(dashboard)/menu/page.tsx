@@ -88,12 +88,12 @@ export default function MenuPage() {
     await load();
   };
 
-  if (restaurantLoading) return <p className="text-sm text-neutral-400">Yuklanmoqda...</p>;
-  if (!current) return <p className="text-sm text-neutral-500">Avval restoran yarating.</p>;
+  if (restaurantLoading) return <p className="text-sm text-[var(--ink-muted)]">Yuklanmoqda...</p>;
+  if (!current) return <p className="text-sm text-[var(--ink-muted)]">Avval restoran yarating.</p>;
 
   return (
     <div className="flex max-w-4xl flex-col gap-4">
-      <h1 className="text-lg font-bold text-neutral-900">Taomlar</h1>
+      <h1 className="text-lg font-bold text-[var(--ink)]">Taomlar</h1>
 
       <Card>
         <form onSubmit={onCreate} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -107,7 +107,7 @@ export default function MenuPage() {
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="rounded-lg border border-neutral-200 px-3 py-2 text-sm"
+              className="rounded-lg border border-[var(--line)] px-3 py-2 text-sm"
             >
               <option value="">Kategoriyasiz</option>
               {categories.map((c) => (
@@ -135,7 +135,7 @@ export default function MenuPage() {
       </Card>
 
       {loading ? (
-        <p className="text-sm text-neutral-400">Yuklanmoqda...</p>
+        <p className="text-sm text-[var(--ink-muted)]">Yuklanmoqda...</p>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
           {eats.map((eat) => {
@@ -147,7 +147,7 @@ export default function MenuPage() {
                   <img src={imageUrl} alt={eat.name} className="aspect-square w-full rounded-lg object-cover" />
                 )}
                 <p className="text-sm font-semibold">{eat.name}</p>
-                <p className="text-xs text-neutral-500">{formatPrice(eat.price)}</p>
+                <p className="text-xs text-[var(--ink-muted)]">{formatPrice(eat.price)}</p>
                 <p className="text-xs">
                   3D:{" "}
                   <span className={eat.model_url ? "text-green-600" : "text-amber-600"}>
@@ -167,7 +167,7 @@ export default function MenuPage() {
               </Card>
             );
           })}
-          {eats.length === 0 && <p className="text-sm text-neutral-400">Hozircha taom yo&apos;q.</p>}
+          {eats.length === 0 && <p className="text-sm text-[var(--ink-muted)]">Hozircha taom yo&apos;q.</p>}
         </div>
       )}
     </div>

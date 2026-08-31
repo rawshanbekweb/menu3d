@@ -59,12 +59,12 @@ export default function CategoriesPage() {
     await load();
   };
 
-  if (restaurantLoading) return <p className="text-sm text-neutral-400">Yuklanmoqda...</p>;
-  if (!current) return <p className="text-sm text-neutral-500">Avval restoran yarating.</p>;
+  if (restaurantLoading) return <p className="text-sm text-[var(--ink-muted)]">Yuklanmoqda...</p>;
+  if (!current) return <p className="text-sm text-[var(--ink-muted)]">Avval restoran yarating.</p>;
 
   return (
     <div className="flex max-w-2xl flex-col gap-4">
-      <h1 className="text-lg font-bold text-neutral-900">Kategoriyalar</h1>
+      <h1 className="text-lg font-bold text-[var(--ink)]">Kategoriyalar</h1>
 
       <Card>
         <form onSubmit={onCreate} className="flex items-end gap-2">
@@ -80,13 +80,13 @@ export default function CategoriesPage() {
       </Card>
 
       {loading ? (
-        <p className="text-sm text-neutral-400">Yuklanmoqda...</p>
+        <p className="text-sm text-[var(--ink-muted)]">Yuklanmoqda...</p>
       ) : (
         <Card className="p-0">
-          <ul className="divide-y divide-neutral-100">
+          <ul className="divide-y divide-[var(--line)]">
             {categories.map((c) => (
               <li key={c.id} className="flex items-center justify-between px-5 py-3">
-                <span className={c.is_active ? "" : "text-neutral-400 line-through"}>{c.name}</span>
+                <span className={c.is_active ? "" : "text-[var(--ink-muted)] line-through"}>{c.name}</span>
                 <div className="flex gap-2">
                   <Button variant="secondary" onClick={() => toggleActive(c)}>
                     {c.is_active ? "Yashirish" : "Ko'rsatish"}
@@ -98,7 +98,7 @@ export default function CategoriesPage() {
               </li>
             ))}
             {categories.length === 0 && (
-              <li className="px-5 py-3 text-sm text-neutral-400">Kategoriya yo&apos;q.</li>
+              <li className="px-5 py-3 text-sm text-[var(--ink-muted)]">Kategoriya yo&apos;q.</li>
             )}
           </ul>
         </Card>

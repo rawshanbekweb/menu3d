@@ -13,36 +13,46 @@ export default function RestaurantHeader({
   const logo = resolveMediaUrl(restaurant.logo);
 
   return (
-    <header className="relative overflow-hidden bg-[var(--brand)] text-[var(--brand-foreground)]">
-      <div className="relative h-36 w-full sm:h-44">
-        {cover ? (
-          <Image src={cover} alt="" fill unoptimized className="object-cover opacity-40" />
-        ) : (
-          <div className="absolute inset-0 bg-black/10" />
+    <header className="relative">
+      <div className="relative h-48 w-full overflow-hidden bg-[var(--brand)] sm:h-56">
+        {cover && (
+          <Image src={cover} alt="" fill unoptimized priority className="object-cover" />
         )}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: cover
+              ? "linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0) 35%, var(--bg) 100%)"
+              : "linear-gradient(180deg, transparent 0%, var(--bg) 100%)",
+          }}
+        />
       </div>
-      <div className="relative -mt-10 flex items-end gap-3 px-4 pb-4">
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-md ring-4 ring-[var(--brand)]">
+
+      <div className="relative -mt-9 flex flex-col items-center px-6 text-center">
+        <div className="flex h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-full bg-[var(--surface)] shadow-sm ring-4 ring-[var(--bg)]">
           {logo ? (
-            <Image src={logo} alt={restaurant.name} width={64} height={64} unoptimized className="h-full w-full object-cover" />
+            <Image src={logo} alt={restaurant.name} width={72} height={72} unoptimized className="h-full w-full object-cover" />
           ) : (
-            <span className="text-lg font-bold text-[var(--brand)]">
+            <span className="font-[family-name:var(--font-display)] text-2xl italic text-[var(--brand)]">
               {restaurant.name.slice(0, 1).toUpperCase()}
             </span>
           )}
         </div>
-        <div className="pb-1">
-          <h1 className="text-lg font-bold leading-tight">{restaurant.name}</h1>
-          <p className="text-xs text-[var(--brand-foreground)]/80">
-            Stol: {table.name}{table.place ? ` · ${table.place}` : ""}
-          </p>
-        </div>
-      </div>
-      {restaurant.description && (
-        <p className="px-4 pb-4 text-sm text-[var(--brand-foreground)]/80">
-          {restaurant.description}
+
+        <h1 className="mt-3 font-[family-name:var(--font-display)] text-2xl font-medium tracking-tight text-[var(--ink)]">
+          {restaurant.name}
+        </h1>
+
+        <p className="mt-1 text-[13px] tracking-wide text-[var(--ink-muted)] uppercase">
+          Stol {table.name}{table.place ? ` · ${table.place}` : ""}
         </p>
-      )}
+
+        {restaurant.description && (
+          <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-[var(--ink-muted)]">
+            {restaurant.description}
+          </p>
+        )}
+      </div>
     </header>
   );
 }

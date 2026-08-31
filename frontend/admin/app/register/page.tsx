@@ -33,8 +33,8 @@ export default function RegisterPage() {
   return (
     <main className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-sm">
-        <h1 className="mb-1 text-lg font-bold text-neutral-900">Restoran egasi sifatida ro&apos;yxatdan o&apos;tish</h1>
-        <p className="mb-4 text-sm text-neutral-500">Ro&apos;yxatdan o&apos;tgach, o&apos;z restoraningizni yaratasiz.</p>
+        <h1 className="mb-1 font-[family-name:var(--font-display)] text-xl italic text-[var(--ink)]">Restoran egasi bo&apos;lib qo&apos;shiling</h1>
+        <p className="mb-5 text-sm text-[var(--ink-muted)]">Ro&apos;yxatdan o&apos;tgach, o&apos;z restoraningizni yaratasiz.</p>
         <form onSubmit={onSubmit} className="flex flex-col gap-3">
           <Field label="Login">
             <Input value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus />
@@ -50,9 +50,9 @@ export default function RegisterPage() {
             {submitting ? "Yuborilmoqda..." : "Ro'yxatdan o'tish"}
           </Button>
         </form>
-        <p className="mt-4 text-center text-sm text-neutral-500">
+        <p className="mt-4 text-center text-sm text-[var(--ink-muted)]">
           Hisobingiz bormi?{" "}
-          <Link href="/login" className="font-medium text-neutral-900 underline">
+          <Link href="/login" className="font-medium text-[var(--ink)] underline">
             Kirish
           </Link>
         </p>

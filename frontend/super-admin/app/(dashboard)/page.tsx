@@ -40,35 +40,35 @@ export default function SuperAdminDashboard() {
     }
   };
 
-  if (loading || !stats) return <p className="text-sm text-neutral-400">Yuklanmoqda...</p>;
+  if (loading || !stats) return <p className="text-sm text-[var(--ink-muted)]">Yuklanmoqda...</p>;
 
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card>
-          <p className="text-sm text-neutral-500">Restoranlar</p>
+          <p className="text-sm text-[var(--ink-muted)]">Restoranlar</p>
           <p className="text-2xl font-bold">{stats.restaurants.total}</p>
-          <p className="text-xs text-neutral-400">{stats.restaurants.active} faol · {stats.restaurants.inactive} to&apos;xtatilgan</p>
+          <p className="text-xs text-[var(--ink-muted)]">{stats.restaurants.active} faol · {stats.restaurants.inactive} to&apos;xtatilgan</p>
         </Card>
         <Card>
-          <p className="text-sm text-neutral-500">Foydalanuvchilar</p>
+          <p className="text-sm text-[var(--ink-muted)]">Foydalanuvchilar</p>
           <p className="text-2xl font-bold">{stats.users}</p>
         </Card>
         <Card>
-          <p className="text-sm text-neutral-500">Stollar</p>
+          <p className="text-sm text-[var(--ink-muted)]">Stollar</p>
           <p className="text-2xl font-bold">{stats.tables}</p>
         </Card>
         <Card>
-          <p className="text-sm text-neutral-500">Taomlar</p>
+          <p className="text-sm text-[var(--ink-muted)]">Taomlar</p>
           <p className="text-2xl font-bold">{stats.eats.total}</p>
-          <p className="text-xs text-neutral-400">{stats.eats.with_3d_model} ta 3D tayyor</p>
+          <p className="text-xs text-[var(--ink-muted)]">{stats.eats.with_3d_model} ta 3D tayyor</p>
         </Card>
       </div>
 
       <Card className="p-0">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-neutral-100 text-neutral-500">
+            <tr className="border-b border-[var(--line)] text-[var(--ink-muted)]">
               <th className="px-5 py-3 font-medium">Restoran</th>
               <th className="px-5 py-3 font-medium">Egasi</th>
               <th className="px-5 py-3 font-medium">Holat</th>
@@ -77,9 +77,9 @@ export default function SuperAdminDashboard() {
           </thead>
           <tbody>
             {restaurants.map((r) => (
-              <tr key={r.id} className="border-b border-neutral-50 last:border-0">
+              <tr key={r.id} className="border-b border-[var(--line)] last:border-0">
                 <td className="px-5 py-3 font-medium">{r.name}</td>
-                <td className="px-5 py-3 text-neutral-500">{r.user.username}</td>
+                <td className="px-5 py-3 text-[var(--ink-muted)]">{r.user.username}</td>
                 <td className="px-5 py-3">
                   <span className={r.is_active ? "text-green-600" : "text-red-500"}>
                     {r.is_active ? "Faol" : "To'xtatilgan"}
@@ -98,7 +98,7 @@ export default function SuperAdminDashboard() {
             ))}
             {restaurants.length === 0 && (
               <tr>
-                <td className="px-5 py-3 text-neutral-400" colSpan={4}>
+                <td className="px-5 py-3 text-[var(--ink-muted)]" colSpan={4}>
                   Hozircha restoran yo&apos;q.
                 </td>
               </tr>

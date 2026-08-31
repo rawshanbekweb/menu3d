@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import generics, permissions, parsers
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -39,7 +40,14 @@ class EatListCreateAPIView(generics.ListCreateAPIView):
             return Response({"detail": "You do not have permission to perform this action."}, status=403)
         serializer.save()
 
-        task_json = api.send_image(serializer.instance.image.url)
+        # In DEBUG, MEDIA is served from this dev machine (127.0.0.1) which the
+        # external AI provider can never reach - send image bytes directly instead
+        # of a URL. In production, media lives on public S3/R2 storage, so a URL
+        # is both reachable and cheaper (the provider fetches it itself).
+        if settings.DEBUG:
+            task_json = api.send_image_local(serializer.instance.image.path)
+        else:
+            task_json = api.send_image(serializer.instance.image.url)
         serializer.instance.task_json = task_json
         serializer.instance.save(update_fields=["task_json"])
 

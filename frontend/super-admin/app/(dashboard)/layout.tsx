@@ -14,14 +14,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [loading, user, router]);
 
   if (loading) {
-    return <div className="flex min-h-screen items-center justify-center text-sm text-neutral-400">Yuklanmoqda...</div>;
+    return <div className="flex min-h-screen items-center justify-center text-sm text-[var(--ink-muted)]">Yuklanmoqda...</div>;
   }
   if (!user) return null;
 
   if (!user.is_superuser) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 p-4 text-center">
-        <p className="text-sm text-neutral-600">
+        <p className="text-sm text-[var(--ink-muted)]">
           Bu hisob ({user.username}) platforma administratori emas.
         </p>
         <Button variant="secondary" onClick={logout}>
@@ -32,9 +32,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="mx-auto max-w-5xl p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-lg font-bold text-neutral-900">Menu3D — Super Admin</h1>
+    <div className="mx-auto max-w-5xl p-8">
+      <div className="mb-8 flex items-center justify-between">
+        <h1 className="font-[family-name:var(--font-display)] text-xl italic text-[var(--ink)]">Menu3D</h1>
         <Button variant="secondary" onClick={logout}>
           Chiqish
         </Button>

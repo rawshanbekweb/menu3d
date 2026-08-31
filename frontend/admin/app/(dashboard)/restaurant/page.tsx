@@ -60,11 +60,11 @@ export default function RestaurantProfilePage() {
     }
   };
 
-  if (loading) return <p className="text-sm text-neutral-400">Yuklanmoqda...</p>;
+  if (loading) return <p className="text-sm text-[var(--ink-muted)]">Yuklanmoqda...</p>;
 
   return (
     <div className="max-w-lg">
-      <h1 className="mb-4 text-lg font-bold text-neutral-900">
+      <h1 className="mb-4 text-lg font-bold text-[var(--ink)]">
         {isNew ? "Restoraningizni yarating" : "Restoran profili"}
       </h1>
       <Card>

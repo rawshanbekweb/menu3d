@@ -65,13 +65,13 @@ export default function StaffPage() {
     }
   };
 
-  if (restaurantLoading) return <p className="text-sm text-neutral-400">Yuklanmoqda...</p>;
-  if (!current) return <p className="text-sm text-neutral-500">Avval restoran yarating.</p>;
-  if (loadError) return <p className="text-sm text-neutral-500">Bu bo&apos;limni faqat egasi va menejer ko&apos;ra oladi.</p>;
+  if (restaurantLoading) return <p className="text-sm text-[var(--ink-muted)]">Yuklanmoqda...</p>;
+  if (!current) return <p className="text-sm text-[var(--ink-muted)]">Avval restoran yarating.</p>;
+  if (loadError) return <p className="text-sm text-[var(--ink-muted)]">Bu bo&apos;limni faqat egasi va menejer ko&apos;ra oladi.</p>;
 
   return (
     <div className="flex max-w-xl flex-col gap-4">
-      <h1 className="text-lg font-bold text-neutral-900">Xodimlar</h1>
+      <h1 className="text-lg font-bold text-[var(--ink)]">Xodimlar</h1>
 
       {isOwner && (
         <Card>
@@ -83,7 +83,7 @@ export default function StaffPage() {
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value as RestaurantRole)}
-                className="rounded-lg border border-neutral-200 px-3 py-2 text-sm"
+                className="rounded-lg border border-[var(--line)] px-3 py-2 text-sm"
               >
                 <option value="waiter">Ofitsiant</option>
                 <option value="manager">Menejer</option>
@@ -92,22 +92,22 @@ export default function StaffPage() {
             <Button type="submit">Qo&apos;shish</Button>
           </form>
           <ErrorText>{error}</ErrorText>
-          <p className="mt-2 text-xs text-neutral-400">
+          <p className="mt-2 text-xs text-[var(--ink-muted)]">
             Foydalanuvchi avval Menu3D&apos;da ro&apos;yxatdan o&apos;tgan bo&apos;lishi kerak.
           </p>
         </Card>
       )}
 
       {loading ? (
-        <p className="text-sm text-neutral-400">Yuklanmoqda...</p>
+        <p className="text-sm text-[var(--ink-muted)]">Yuklanmoqda...</p>
       ) : (
         <Card className="p-0">
-          <ul className="divide-y divide-neutral-100">
+          <ul className="divide-y divide-[var(--line)]">
             {staff.map((member) => (
               <li key={member.id} className="flex items-center justify-between px-5 py-3">
                 <div>
                   <p className="text-sm font-medium">{member.user.username}</p>
-                  <p className="text-xs capitalize text-neutral-500">{member.role}</p>
+                  <p className="text-xs capitalize text-[var(--ink-muted)]">{member.role}</p>
                 </div>
                 {isOwner && member.role !== "owner" && (
                   <Button variant="danger" onClick={() => remove(member)}>

@@ -58,12 +58,12 @@ export default function TablesPage() {
     setTimeout(() => setCopiedId(null), 1500);
   };
 
-  if (restaurantLoading) return <p className="text-sm text-neutral-400">Yuklanmoqda...</p>;
-  if (!current) return <p className="text-sm text-neutral-500">Avval restoran yarating.</p>;
+  if (restaurantLoading) return <p className="text-sm text-[var(--ink-muted)]">Yuklanmoqda...</p>;
+  if (!current) return <p className="text-sm text-[var(--ink-muted)]">Avval restoran yarating.</p>;
 
   return (
     <div className="flex max-w-3xl flex-col gap-4">
-      <h1 className="text-lg font-bold text-neutral-900">Stollar / QR kodlar</h1>
+      <h1 className="text-lg font-bold text-[var(--ink)]">Stollar / QR kodlar</h1>
 
       <Card>
         <form onSubmit={onCreate} className="flex items-end gap-2">
@@ -79,7 +79,7 @@ export default function TablesPage() {
       </Card>
 
       {loading ? (
-        <p className="text-sm text-neutral-400">Yuklanmoqda...</p>
+        <p className="text-sm text-[var(--ink-muted)]">Yuklanmoqda...</p>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
           {tables.map((table) => {
@@ -110,7 +110,7 @@ export default function TablesPage() {
               </Card>
             );
           })}
-          {tables.length === 0 && <p className="text-sm text-neutral-400">Hozircha stol yo&apos;q.</p>}
+          {tables.length === 0 && <p className="text-sm text-[var(--ink-muted)]">Hozircha stol yo&apos;q.</p>}
         </div>
       )}
     </div>

@@ -30,8 +30,8 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-sm">
-        <h1 className="mb-1 text-lg font-bold text-neutral-900">Menu3D — Super Admin</h1>
-        <p className="mb-4 text-sm text-neutral-500">Faqat platforma administratorlari uchun.</p>
+        <h1 className="mb-1 font-[family-name:var(--font-display)] text-xl italic text-[var(--ink)]">Menu3D</h1>
+        <p className="mb-5 text-sm text-[var(--ink-muted)]">Faqat platforma administratorlari uchun.</p>
         <form onSubmit={onSubmit} className="flex flex-col gap-3">
           <Field label="Login">
             <Input value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus />

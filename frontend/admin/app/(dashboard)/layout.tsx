@@ -15,7 +15,7 @@ function Guard({ children }: { children: React.ReactNode }) {
   }, [loading, user, router]);
 
   if (loading) {
-    return <div className="flex min-h-screen items-center justify-center text-sm text-neutral-400">Yuklanmoqda...</div>;
+    return <div className="flex min-h-screen items-center justify-center text-sm text-[var(--ink-muted)]">Yuklanmoqda...</div>;
   }
   if (!user) return null;
 
@@ -23,7 +23,7 @@ function Guard({ children }: { children: React.ReactNode }) {
     <RestaurantProvider>
       <div className="flex min-h-screen">
         <Sidebar />
-        <div className="flex-1 p-6">{children}</div>
+        <div className="flex-1 p-8">{children}</div>
       </div>
     </RestaurantProvider>
   );

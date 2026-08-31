@@ -16,7 +16,7 @@ export default function MenuBrowser({ categories }: { categories: PublicCategory
 
   if (visibleCategories.length === 0) {
     return (
-      <p className="px-4 py-10 text-center text-sm text-neutral-500">
+      <p className="px-6 py-16 text-center text-sm text-[var(--ink-muted)]">
         Hozircha menyu bo&apos;sh.
       </p>
     );
@@ -25,24 +25,25 @@ export default function MenuBrowser({ categories }: { categories: PublicCategory
   const active = visibleCategories.find((c) => c.id === activeId) ?? visibleCategories[0];
 
   return (
-    <div className="flex flex-1 flex-col">
-      <nav className="sticky top-0 z-10 flex gap-2 overflow-x-auto border-b border-neutral-200 bg-neutral-50/95 px-4 py-3 backdrop-blur">
+    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col">
+      <nav className="sticky top-0 z-10 flex gap-6 overflow-x-auto bg-[var(--bg)]/95 px-6 pt-6 pb-0 backdrop-blur">
         {visibleCategories.map((c) => (
           <button
             key={c.id}
             onClick={() => setActiveId(c.id)}
-            className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition ${
+            className={`shrink-0 whitespace-nowrap border-b-2 pb-3 text-[15px] font-medium transition ${
               c.id === active.id
-                ? "bg-[var(--brand)] text-[var(--brand-foreground)]"
-                : "bg-white text-neutral-600 ring-1 ring-black/5"
+                ? "border-[var(--brand)] text-[var(--ink)]"
+                : "border-transparent text-[var(--ink-muted)]"
             }`}
           >
             {c.name}
           </button>
         ))}
       </nav>
+      <div className="h-px w-full bg-[var(--line)]" />
 
-      <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3">
+      <div key={active.id} className="animate-fade-in grid grid-cols-2 gap-x-3 gap-y-6 px-6 py-6 sm:grid-cols-3">
         {active.eats.map((eat) => (
           <FoodCard key={eat.id} eat={eat} onSelect={() => setSelectedEat(eat)} />
         ))}
