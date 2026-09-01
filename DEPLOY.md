@@ -1,10 +1,103 @@
 # Deploying menu3d
 
-Backend + Postgres run on a VPS via Docker, fronted by Caddy for automatic
-HTTPS. The three frontends (`admin`, `super-admin`, `customer`) each deploy
-to Vercel as separate projects.
+Two backend paths are documented below - pick one:
 
-## 1. Backend (VPS)
+- **Option A: Render (free tier) + Vercel** - fastest to set up, no server to
+  manage, good for getting a real URL live quickly.
+- **Option B: VPS (Docker + Caddy) + Vercel** - `docker-compose.yml` and
+  `Caddyfile` in this repo are built for this; use it once you need more than
+  Render's free tier gives you (it sleeps after 15 min idle, wakes up slowly).
+
+Both options deploy the three frontends (`admin`, `super-admin`, `customer`)
+to Vercel as three separate projects.
+
+## Option A: Render + Vercel
+
+### A.1 Database
+
+Render's free plan doesn't include Postgres, so use a free external one -
+[Neon](https://neon.tech) or [Supabase](https://supabase.com) both work.
+Create a project, copy its Postgres connection string (`postgres://...`) -
+that's your `DATABASE_URL`.
+
+### A.2 Backend (Render)
+
+New → Web Service → connect this repo:
+
+- **Root Directory**: `backend`
+- **Environment**: Docker (it will find `backend/Dockerfile`)
+- **Instance Type**: Free
+- **Health Check Path**: `/health/`
+
+Environment variables (Render dashboard → Environment, not a file):
+
+| Key | Value |
+|---|---|
+| `SECRET_KEY` | generate: `python -c "import secrets; print(secrets.token_urlsafe(50))"` |
+| `DEBUG` | `False` |
+| `ALLOWED_HOSTS` | `<your-service-name>.onrender.com` (pick the service name up front so you know this before deploying) |
+| `DATABASE_URL` | the Neon/Supabase connection string from A.1 |
+| `CORS_ALLOWED_ORIGINS` | the 3 Vercel URLs from A.3, comma-separated, no trailing slash |
+| `FRONTEND_BASE_URL` | the customer app's Vercel URL (baked into every table's QR code) |
+| `CLOUDFLARE_ACCOUNT_ID` | from your Cloudflare R2 dashboard |
+| `CLOUDFLARE_ACCESS_KEY_ID` | R2 API token |
+| `CLOUDFLARE_SECRET_ACCESS_KEY` | R2 API token |
+| `CLOUDFLARE_R2_BUCKET` | R2 bucket name |
+| `CLOUDFLARE_R2_PUBLIC_URL` | R2 bucket's public URL |
+| `AISTUDIO_TOKEN` | 3daistudio.com API token |
+| `WEB_CONCURRENCY` | `2` (free tier has 512MB RAM - the default of 3 gunicorn workers can OOM it) |
+
+Do **not** set `PORT` - Render injects it itself and `entrypoint.sh` already
+binds to it (`${PORT:-8000}`).
+
+Media uploads (`CLOUDFLARE_*`) are required here even for testing - Render's
+filesystem is ephemeral, so without R2 every uploaded image disappears on the
+next deploy or restart.
+
+Deploy, then open a shell (Render dashboard → Shell) and run:
+
+```bash
+python manage.py createsuperuser
+```
+
+Migrations and `collectstatic` already ran automatically on boot
+(`backend/entrypoint.sh`). Re-deploys are automatic on every push to `main`
+by default.
+
+### A.3 Frontends (Vercel)
+
+Create three separate Vercel projects from this repo, one per app, each with
+its **Root Directory** set accordingly:
+
+| Vercel project | Root Directory |
+|---|---|
+| menu3d-admin | `frontend/admin` |
+| menu3d-super-admin | `frontend/super-admin` |
+| menu3d-customer | `frontend/customer` |
+
+Same single environment variable on all three:
+
+```
+NEXT_PUBLIC_API_URL=https://<your-service-name>.onrender.com
+```
+
+This is inlined at build time, so redeploy on Vercel after changing it.
+
+Once you have the three `*.vercel.app` URLs, go back to Render's
+`CORS_ALLOWED_ORIGINS` and set those exact origins, then redeploy the
+backend - cookie auth will 401 silently otherwise (blocked by CORS, not a
+login bug).
+
+### A.4 First-time checks
+
+- `https://<your-service-name>.onrender.com/health/` returns `{"status": "ok"}`.
+- First request after idle takes ~30-60s on the free tier (cold start) -
+  expected, not a bug.
+- Log into the admin app; if it hangs on "loading", check the browser's
+  network tab for CORS errors first (see A.3's last paragraph).
+- Render dashboard → Logs for gunicorn/Django errors.
+
+## Option B: VPS (Docker + Caddy) + Vercel
 
 Requirements: a VPS with Docker + the Docker Compose plugin installed, and a
 domain (e.g. `api.yourdomain.com`) with its DNS A record pointed at the VPS's
@@ -23,7 +116,7 @@ cp backend/.env.example backend/.env
 #   SECRET_KEY            (generate: python -c "import secrets; print(secrets.token_urlsafe(50))")
 #   DEBUG=False
 #   ALLOWED_HOSTS          e.g. api.yourdomain.com
-#   CORS_ALLOWED_ORIGINS   the 3 Vercel URLs from step 2, comma-separated, no trailing slash
+#   CORS_ALLOWED_ORIGINS   the 3 Vercel URLs, comma-separated, no trailing slash
 #   FRONTEND_BASE_URL      the customer app's URL (baked into every table's QR code)
 #   CLOUDFLARE_*           R2 bucket for uploaded images (required whenever DEBUG=False)
 #   AISTUDIO_TOKEN         3daistudio.com API token
@@ -46,36 +139,9 @@ docker compose up -d --build backend
 Note: `backend` isn't published to the host — only Caddy (ports 80/443) is.
 That's what makes it safe for gunicorn to speak plain HTTP internally.
 
-## 2. Frontends (Vercel)
+Frontends: same as Option A.3, but `NEXT_PUBLIC_API_URL=https://<DOMAIN>`.
 
-Create three separate Vercel projects from this repo, one per app, each with
-its **Root Directory** set accordingly:
-
-| Vercel project | Root Directory        |
-|-----------------|------------------------|
-| menu3d-admin    | `frontend/admin`       |
-| menu3d-super-admin | `frontend/super-admin` |
-| menu3d-customer | `frontend/customer`    |
-
-For each project, set the environment variable:
-
-```
-NEXT_PUBLIC_API_URL=https://<DOMAIN>
-```
-
-(the same `DOMAIN` from step 1's root `.env`). This is inlined at build time,
-so redeploy on Vercel after changing it.
-
-Once you have the three `*.vercel.app` (or custom) URLs, go back to
-`backend/.env` on the VPS and set `CORS_ALLOWED_ORIGINS` to those exact
-origins, then `docker compose up -d backend` to pick up the change - cookie
-auth will 401 silently otherwise (blocked by CORS, not a login bug).
-
-## 3. First-time checks
-
-- `https://<DOMAIN>/health/` returns `{"status": "ok"}`.
-- Log into the admin app; if it hangs on "loading", check the browser's
-  network tab for CORS errors first (see step 2's last paragraph).
-- `docker compose logs -f backend` for gunicorn/Django errors.
-- `docker compose logs -f caddy` if the certificate isn't issuing (usually a
-  DNS or port 80/443 firewall issue).
+First-time checks: same as A.4, but `docker compose logs -f backend` /
+`docker compose logs -f caddy` instead of the Render dashboard (check Caddy's
+logs if the certificate isn't issuing - usually a DNS or port 80/443
+firewall issue).
