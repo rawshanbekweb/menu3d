@@ -26,8 +26,8 @@ class Eat(models.Model):
     description = models.TextField(validators=[MinLengthValidator(5), MaxLengthValidator(500)])
     price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal("0.00"))])
     image = models.ImageField(upload_to="eat/")
-    task_json = models.JSONField(default={})
-    model_json = models.JSONField(default={})
+    task_json = models.JSONField(default=dict)
+    model_json = models.JSONField(default=dict)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

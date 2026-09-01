@@ -6,8 +6,15 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config("SECRET_KEY")
-DEBUG = config("DEBUG", default=False)
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
+DEBUG = config("DEBUG", default=False, cast=bool)
+# localhost/127.0.0.1/backend are always allowed so the Docker healthcheck
+# (hitting http://localhost:8000/health/ from inside the container) works
+# regardless of what public domain is configured below.
+ALLOWED_HOSTS = [h for h in config("ALLOWED_HOSTS", default="").split(",") if h] + [
+    "localhost",
+    "127.0.0.1",
+    "backend",
+]
 
 DJANGO_APPS = [
     "django.contrib.admin",
@@ -19,7 +26,8 @@ DJANGO_APPS = [
 ]
 THIRD_APPS = [
     "rest_framework",
-    "corsheaders"
+    "corsheaders",
+    "rest_framework_simplejwt.token_blacklist",
 ]
 LOCAL_APPS = [
     "apps.user",
@@ -36,6 +44,7 @@ FRONTEND_BASE_URL = config("FRONTEND_BASE_URL", default="http://localhost:3000")
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -89,7 +98,7 @@ else:
             "BACKEND": "storages.backends.s3.S3Storage",
         },
         "staticfiles": {
-            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
 
@@ -158,17 +167,20 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.JSONParser"
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework_simplejwt.authentication.JWTAuthentication"
+        "apps.user.authentication.CookieJWTAuthentication"
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 20
+    "PAGE_SIZE": 20,
+    # APIClient in tests defaults to multipart otherwise, which doesn't match
+    # how the real frontends call these (JSON) and trips 415s on JSON-only views.
+    "TEST_REQUEST_DEFAULT_FORMAT": "json",
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=5),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    # "ROTATE_REFRESH_TOKENS": False,
-    # "BLACKLIST_AFTER_ROTATION": False,
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
     # "UPDATE_LAST_LOGIN": False,
     #
     "ALGORITHM": "HS256",
@@ -208,31 +220,53 @@ SIMPLE_JWT = {
     # "CHECK_USER_IS_ACTIVE": True,
 }
 
+# CORS_ALLOW_ALL_ORIGINS (wildcard) is incompatible with credentialed
+# (cookie) requests, so an explicit origin allowlist is used in both modes.
+CORS_ALLOW_CREDENTIALS = True
 if DEBUG:
-	CORS_ALLOW_ALL_ORIGINS=True
-
+    CORS_ALLOWED_ORIGIN_REGEXES = [
+        r"^http://localhost:\d+$",
+        r"^http://127\.0\.0\.1:\d+$",
+        # Any RFC1918 private LAN address, on any port - dev machine's LAN IP
+        # can change (DHCP, switching to a phone hotspot, etc.).
+        r"^http://192\.168\.\d{1,3}\.\d{1,3}:\d+$",
+        r"^http://10\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$",
+        r"^http://172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}:\d+$",
+    ]
 else:
-	CORS_ALLOWED_ORIGINS=config("CORS_ALLOWED_ORIGINS").split(",")
+    CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS").split(",")
 
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 
-# LOGGING = {
-#     "version": 1,
-#     "disable_existing_loggers": False,
-#     "handlers": {
-#         "file": {
-#             "level": "INFO",
-#             "class": "logging.FileHandler",
-#             "filename": BASE_DIR / "debug.log"
-#         },
-#     },
-#     "loggers": {
-#         "django": {
-#             "handlers": ["file"],
-#             "level": "INFO",
-#             "propagate": True
-#         }
-#     }
-# }
+if not DEBUG:
+    # Caddy terminates TLS and proxies to gunicorn over plain HTTP inside the
+    # docker network - without this, Django can't tell the original request
+    # was HTTPS and SECURE_SSL_REDIRECT loops forever.
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
+    # The Docker healthcheck hits gunicorn directly over plain HTTP (bypassing
+    # Caddy), so it never carries the X-Forwarded-Proto header - exempt it
+    # from the redirect above or it 301s to an HTTPS port gunicorn can't serve.
+    SECURE_REDIRECT_EXEMPT = [r"^health/$"]
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 60 * 60 * 24 * 30  # 30 days
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+}

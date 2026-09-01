@@ -1,15 +1,17 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { apiFetch, clearTokens, getAccessToken, setTokens, ApiError } from "./api";
+import { apiFetch, ApiError } from "./api";
 import type { User } from "./types";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 type AuthContextValue = {
   user: User | null;
   loading: boolean;
   login: (username: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -19,16 +21,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const loadUser = async () => {
-    if (!getAccessToken()) {
-      setUser(null);
-      setLoading(false);
-      return;
-    }
+    // The access token lives in an httpOnly cookie, invisible to JS - the
+    // only way to know if we're logged in is to just ask the API.
     try {
       const me = await apiFetch<User>("/api/user/me/");
       setUser(me);
     } catch {
-      clearTokens();
       setUser(null);
     } finally {
       setLoading(false);
@@ -41,19 +39,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (username: string, password: string) => {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000"}/api/token/`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      }
-    );
+    const res = await fetch(`${API_BASE_URL}/api/auth/login/`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
     if (!res.ok) {
       throw new ApiError(res.status, await res.json().catch(() => null));
     }
-    const data = await res.json();
-    setTokens(data.access, data.refresh);
     await loadUser();
   };
 
@@ -66,8 +60,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await login(username, password);
   };
 
-  const logout = () => {
-    clearTokens();
+  const logout = async () => {
+    await fetch(`${API_BASE_URL}/api/auth/logout/`, { method: "POST", credentials: "include" });
     setUser(null);
   };
 

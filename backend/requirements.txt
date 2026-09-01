@@ -13,3 +13,7 @@ qrcode
 #FOR CLOUDFLARE
 django-storages
 boto3
+
+#FOR PRODUCTION
+gunicorn
+whitenoise

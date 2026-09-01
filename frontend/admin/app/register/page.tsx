@@ -2,14 +2,12 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
 import { Button, Card, ErrorText, Field, Input } from "@/components/ui";
 
 export default function RegisterPage() {
   const { register } = useAuth();
-  const router = useRouter();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,10 +20,12 @@ export default function RegisterPage() {
     setSubmitting(true);
     try {
       await register(username, email, password);
-      router.push("/restaurant");
+      // Full reload (not router.push) so the dashboard always starts from a
+      // clean, freshly-fetched state right after auth.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.href = "/restaurant";
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Ro'yxatdan o'tishda xatolik yuz berdi.");
-    } finally {
       setSubmitting(false);
     }
   };

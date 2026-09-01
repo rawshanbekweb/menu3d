@@ -1,13 +1,11 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { Button, Card, ErrorText, Field, Input } from "@/components/ui";
 
 export default function LoginPage() {
   const { login } = useAuth();
-  const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -19,10 +17,12 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await login(username, password);
-      router.push("/");
+      // Full reload (not router.push) so the dashboard always starts from a
+      // clean, freshly-fetched state right after auth.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.href = "/";
     } catch {
       setError("Login yoki parol xato.");
-    } finally {
       setSubmitting(false);
     }
   };

@@ -1,28 +1,5 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
-const ACCESS_KEY = "menu3d_access";
-const REFRESH_KEY = "menu3d_refresh";
-
-export function getAccessToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem(ACCESS_KEY);
-}
-
-export function getRefreshToken(): string | null {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem(REFRESH_KEY);
-}
-
-export function setTokens(access: string, refresh: string) {
-  window.localStorage.setItem(ACCESS_KEY, access);
-  window.localStorage.setItem(REFRESH_KEY, refresh);
-}
-
-export function clearTokens() {
-  window.localStorage.removeItem(ACCESS_KEY);
-  window.localStorage.removeItem(REFRESH_KEY);
-}
-
 export function resolveMediaUrl(path: string | null | undefined): string | null {
   if (!path) return null;
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
@@ -39,44 +16,39 @@ export class ApiError extends Error {
   }
 }
 
-async function refreshAccessToken(): Promise<string | null> {
-  const refresh = getRefreshToken();
-  if (!refresh) return null;
-
-  const res = await fetch(`${API_BASE_URL}/api/refresh/`, {
+async function refreshSession(): Promise<boolean> {
+  const res = await fetch(`${API_BASE_URL}/api/auth/refresh/`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh }),
+    credentials: "include",
   });
-  if (!res.ok) {
-    clearTokens();
-    return null;
-  }
-  const data = await res.json();
-  window.localStorage.setItem(ACCESS_KEY, data.access);
-  return data.access as string;
+  return res.ok;
 }
 
-/** Authenticated fetch: attaches the JWT, retries once after a silent refresh on 401, and parses JSON. */
+/** Authenticated fetch: the JWT lives in an httpOnly cookie the browser sends
+ * automatically. Retries once after a silent refresh on 401, and parses JSON. */
 export async function apiFetch<T>(
   path: string,
   options: { method?: string; body?: BodyInit; isForm?: boolean; auth?: boolean } = {}
 ): Promise<T> {
   const { method = "GET", body, isForm = false, auth = true } = options;
 
-  const doFetch = async (token: string | null) => {
+  const doFetch = () => {
     const headers: Record<string, string> = {};
     if (!isForm && body) headers["Content-Type"] = "application/json";
-    if (auth && token) headers["Authorization"] = `Bearer ${token}`;
 
-    return fetch(`${API_BASE_URL}${path}`, { method, headers, body });
+    return fetch(`${API_BASE_URL}${path}`, {
+      method,
+      headers,
+      body,
+      credentials: auth ? "include" : "same-origin",
+    });
   };
 
-  let res = await doFetch(getAccessToken());
+  let res = await doFetch();
 
   if (res.status === 401 && auth) {
-    const newToken = await refreshAccessToken();
-    if (newToken) res = await doFetch(newToken);
+    const refreshed = await refreshSession();
+    if (refreshed) res = await doFetch();
   }
 
   if (res.status === 204) return undefined as T;

@@ -11,7 +11,7 @@ class Restaurant(models.Model):
     slug = models.SlugField(max_length=255, unique=True, blank=True, verbose_name="Slug")
     description = models.TextField(validators=[MinLengthValidator(3), MaxLengthValidator(500)], blank=True, null=True, verbose_name="Description")
     location = models.CharField(max_length=200, blank=True, null=True, verbose_name="Location")
-    coordinates = models.JSONField(default={}, blank=True, null=True, verbose_name="Coordinates")
+    coordinates = models.JSONField(default=dict, blank=True, null=True, verbose_name="Coordinates")
     logo = models.ImageField(upload_to="restaurant/logos/", blank=True, null=True, verbose_name="Logo")
     cover_image = models.ImageField(upload_to="restaurant/covers/", blank=True, null=True, verbose_name="Cover image")
     primary_color = models.CharField(max_length=7, default="#111827", verbose_name="Primary color")
