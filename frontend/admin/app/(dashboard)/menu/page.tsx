@@ -7,6 +7,17 @@ import { formatPrice } from "@/lib/format";
 import { Button, Card, ErrorText, Field, Input, Textarea } from "@/components/ui";
 import type { Category, Eat } from "@/lib/types";
 
+const STATUS_LABELS: Record<string, string> = {
+  pending: "navbatda",
+  in_progress: "yaratilmoqda...",
+  processing: "yaratilmoqda...",
+  unknown: "noma'lum",
+};
+
+function modelStatusLabel(status: string) {
+  return STATUS_LABELS[status] ?? status;
+}
+
 export default function MenuPage() {
   const { current, loading: restaurantLoading } = useRestaurant();
   const [eats, setEats] = useState<Eat[]>([]);
@@ -39,6 +50,25 @@ export default function MenuPage() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current]);
+
+  // Auto-poll 3D model status for anything still generating, so the admin
+  // doesn't have to keep clicking "Tekshirish" by hand. Re-schedules itself
+  // (via the `eats` dependency) after every poll, and simply stops
+  // re-scheduling once nothing is pending anymore.
+  useEffect(() => {
+    const pending = eats.filter((e) => !e.model_url);
+    if (!current || pending.length === 0) return;
+
+    const timer = setTimeout(async () => {
+      await Promise.all(
+        pending.map((e) => apiFetch(`/api/eat/check-model/${e.id}/`).catch(() => undefined))
+      );
+      const data = await apiFetch<{ results: Eat[] }>(`/api/eat/?restaurant=${current.id}`);
+      setEats(data.results);
+    }, 10000);
+
+    return () => clearTimeout(timer);
+  }, [eats, current]);
 
   const resetForm = () => {
     setName("");
@@ -151,7 +181,7 @@ export default function MenuPage() {
                 <p className="text-xs">
                   3D:{" "}
                   <span className={eat.model_url ? "text-green-600" : "text-amber-600"}>
-                    {eat.model_url ? "tayyor" : eat.model_status}
+                    {eat.model_url ? "tayyor" : modelStatusLabel(eat.model_status)}
                   </span>
                 </p>
                 <div className="flex gap-2">
