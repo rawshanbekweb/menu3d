@@ -7,8 +7,6 @@ type ModelViewerAttributes = DetailedHTMLProps<
   src?: string;
   alt?: string;
   poster?: string;
-  ar?: boolean;
-  "ar-modes"?: string;
   "camera-controls"?: boolean;
   "auto-rotate"?: boolean;
   "shadow-intensity"?: string | number;
@@ -17,7 +15,6 @@ type ModelViewerAttributes = DetailedHTMLProps<
   reveal?: "auto" | "interaction" | "manual";
   "environment-image"?: string;
   "interaction-prompt"?: "auto" | "when-focused" | "none";
-  "auto-rotate-delay"?: string | number;
 };
 
 declare module "react" {

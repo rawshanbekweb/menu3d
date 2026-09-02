@@ -52,6 +52,8 @@ export type Eat = {
   image: string;
   model_url: string | null;
   model_status: string;
+  model_progress: number | null;
+  model_error: string | null;
   created_at: string;
   updated_at: string;
 };

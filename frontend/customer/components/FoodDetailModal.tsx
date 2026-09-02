@@ -41,7 +41,13 @@ export default function FoodDetailModal({
               ar-modes="webxr scene-viewer quick-look"
               camera-controls
               auto-rotate
+              auto-rotate-delay="0"
+              interaction-prompt="when-focused"
+              environment-image="neutral"
+              exposure="1"
               shadow-intensity="1"
+              loading="eager"
+              reveal="auto"
             >
               <button
                 slot="ar-button"
@@ -77,10 +83,26 @@ export default function FoodDetailModal({
           <p className="pt-1 text-lg font-semibold text-[var(--ink)]">
             {formatPrice(eat.price)}
           </p>
-          {!hasAr && (
+          {!hasAr && eat.model_error && (
             <p className="mt-1 rounded-xl bg-[var(--bg)] px-3.5 py-2.5 text-[13px] text-[var(--ink-muted)]">
-              Bu taom uchun 3D ko&apos;rinish hali tayyorlanmoqda.
+              Bu taom uchun 3D ko&apos;rinishni tayyorlab bo&apos;lmadi.
             </p>
+          )}
+          {!hasAr && !eat.model_error && (
+            <div className="mt-1 flex flex-col gap-2 rounded-xl bg-[var(--bg)] px-3.5 py-2.5">
+              <p className="text-[13px] text-[var(--ink-muted)]">
+                Bu taom uchun 3D ko&apos;rinish tayyorlanmoqda
+                {typeof eat.model_progress === "number" ? `: ${Math.round(eat.model_progress)}%` : "..."}
+              </p>
+              {typeof eat.model_progress === "number" && (
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--line)]">
+                  <div
+                    className="h-full rounded-full bg-[var(--brand)] transition-all duration-500"
+                    style={{ width: `${Math.min(100, Math.max(0, eat.model_progress))}%` }}
+                  />
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>

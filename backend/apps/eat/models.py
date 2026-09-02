@@ -37,20 +37,31 @@ class Eat(models.Model):
     @property
     def model_url(self):
         """
-        Best-effort extraction of the generated .glb URL from the 3daistudio
-        job-status payload. Key names are not yet confirmed against a live
-        response (needs a real AISTUDIO_TOKEN) - update this if the provider's
-        actual field names differ once verified.
+        Extract the generated .glb URL from the 3daistudio job-status payload.
+        On success the payload looks like:
+            {"status": "FINISHED", "results": [{"asset": "https://.../x.glb",
+             "asset_type": "3D_MODEL"}]}
         """
         data = self.model_json or {}
         for key in ("model_url", "glb_url", "url", "output_url"):
             value = data.get(key)
             if value:
                 return value
-        result = data.get("result")
-        if isinstance(result, dict):
-            for key in ("model_url", "glb_url", "url"):
-                value = result.get(key)
+
+        def extract(entry):
+            if not isinstance(entry, dict):
+                return None
+            for key in ("asset", "asset_url", "model_url", "glb_url", "url"):
+                value = entry.get(key)
+                if value:
+                    return value
+            return None
+
+        for container_key in ("results", "result"):
+            container = data.get(container_key)
+            entries = container if isinstance(container, list) else [container]
+            for entry in entries:
+                value = extract(entry)
                 if value:
                     return value
         return None
@@ -60,8 +71,19 @@ class Eat(models.Model):
         data = self.model_json or {}
         status = data.get("status") or data.get("state")
         if status:
-            return status
+            return status.lower() if isinstance(status, str) else status
         return "pending" if not data else "unknown"
+
+    @property
+    def model_progress(self):
+        data = self.model_json or {}
+        progress = data.get("progress")
+        return progress if isinstance(progress, (int, float)) else None
+
+    @property
+    def model_error(self):
+        data = self.model_json or {}
+        return data.get("failure_reason") or data.get("error") or None
 
     class Meta:
         verbose_name = "Eat"

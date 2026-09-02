@@ -5,6 +5,8 @@ from .models import Eat, Category
 class EatSerializer(serializers.ModelSerializer):
     model_url = serializers.ReadOnlyField()
     model_status = serializers.ReadOnlyField()
+    model_progress = serializers.ReadOnlyField()
+    model_error = serializers.ReadOnlyField()
 
     class Meta:
         model = Eat
@@ -20,10 +22,15 @@ class CreateEatSerializer(serializers.ModelSerializer):
 class PublicEatSerializer(serializers.ModelSerializer):
     model_url = serializers.ReadOnlyField()
     model_status = serializers.ReadOnlyField()
+    model_progress = serializers.ReadOnlyField()
+    model_error = serializers.ReadOnlyField()
 
     class Meta:
         model = Eat
-        fields = ["id", "name", "description", "price", "image", "category", "model_url", "model_status"]
+        fields = [
+            "id", "name", "description", "price", "image", "category",
+            "model_url", "model_status", "model_progress", "model_error",
+        ]
 
 
 class CategorySerializer(serializers.ModelSerializer):

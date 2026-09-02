@@ -18,6 +18,8 @@ export type PublicEat = {
   category: number | null;
   model_url: string | null;
   model_status: string;
+  model_progress: number | null;
+  model_error: string | null;
 };
 
 export type PublicCategory = {

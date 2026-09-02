@@ -1,16 +1,23 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import dynamic from "next/dynamic";
 import { apiFetch, resolveMediaUrl, ApiError } from "@/lib/api";
 import { useRestaurant } from "@/lib/restaurant";
 import { formatPrice } from "@/lib/format";
 import { Button, Card, ErrorText, Field, Input, Textarea } from "@/components/ui";
 import type { Category, Eat } from "@/lib/types";
 
+// model-viewer touches browser globals at module load time, so it must
+// never be evaluated during SSR.
+const Model3DPreview = dynamic(() => import("@/components/Model3DPreview"), { ssr: false });
+
 const STATUS_LABELS: Record<string, string> = {
   pending: "navbatda",
   in_progress: "yaratilmoqda...",
   processing: "yaratilmoqda...",
+  finished: "tayyor",
+  failed: "xatolik yuz berdi",
   unknown: "noma'lum",
 };
 
@@ -56,7 +63,7 @@ export default function MenuPage() {
   // (via the `eats` dependency) after every poll, and simply stops
   // re-scheduling once nothing is pending anymore.
   useEffect(() => {
-    const pending = eats.filter((e) => !e.model_url);
+    const pending = eats.filter((e) => !e.model_url && !e.model_error);
     if (!current || pending.length === 0) return;
 
     const timer = setTimeout(async () => {
@@ -172,16 +179,26 @@ export default function MenuPage() {
             const imageUrl = resolveMediaUrl(eat.image);
             return (
               <Card key={eat.id} className="flex flex-col gap-2 p-3">
-                {imageUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={imageUrl} alt={eat.name} className="aspect-square w-full rounded-lg object-cover" />
+                {eat.model_url ? (
+                  <Model3DPreview modelUrl={eat.model_url} poster={imageUrl} alt={eat.name} />
+                ) : (
+                  imageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={imageUrl} alt={eat.name} className="aspect-square w-full rounded-lg object-cover" />
+                  )
                 )}
                 <p className="text-sm font-semibold">{eat.name}</p>
                 <p className="text-xs text-[var(--ink-muted)]">{formatPrice(eat.price)}</p>
                 <p className="text-xs">
                   3D:{" "}
-                  <span className={eat.model_url ? "text-green-600" : "text-amber-600"}>
-                    {eat.model_url ? "tayyor" : modelStatusLabel(eat.model_status)}
+                  <span className={eat.model_url ? "text-green-600" : eat.model_error ? "text-red-600" : "text-amber-600"}>
+                    {eat.model_url
+                      ? "tayyor"
+                      : eat.model_error
+                        ? "xatolik yuz berdi"
+                        : `${modelStatusLabel(eat.model_status)}${
+                            typeof eat.model_progress === "number" ? ` ${Math.round(eat.model_progress)}%` : ""
+                          }`}
                   </span>
                 </p>
                 <div className="flex gap-2">
