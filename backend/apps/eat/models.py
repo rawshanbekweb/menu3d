@@ -75,16 +75,25 @@ class Eat(models.Model):
 
     @property
     def model_url(self):
-        if self.model_file:
-            return self.model_file.url
-        return extract_provider_model_url(self.model_json)
+        """
+        Only ever the permanent, re-hosted file - never the provider's raw
+        presigned link (it expires in ~1 hour, so exposing it here would
+        just hand out a URL that goes dead shortly after being read).
+        """
+        return self.model_file.url if self.model_file else None
 
     @property
     def model_status(self):
         data = self.model_json or {}
         status = data.get("status") or data.get("state")
+        status = status.lower() if isinstance(status, str) else status
+        # The provider says it's finished, but we haven't re-hosted the file
+        # yet (or a previous download attempt failed) - one more "Tekshirish"
+        # will retry the download.
+        if status in ("finished", "success", "succeeded", "completed") and not self.model_file:
+            return "downloading"
         if status:
-            return status.lower() if isinstance(status, str) else status
+            return status
         return "pending" if not data else "unknown"
 
     @property

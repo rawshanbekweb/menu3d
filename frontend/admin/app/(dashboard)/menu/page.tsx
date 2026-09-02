@@ -17,6 +17,7 @@ const STATUS_LABELS: Record<string, string> = {
   in_progress: "yaratilmoqda...",
   processing: "yaratilmoqda...",
   finished: "tayyor",
+  downloading: "saqlanmoqda...",
   failed: "xatolik yuz berdi",
   unknown: "noma'lum",
 };
