@@ -1,10 +1,14 @@
+from pathlib import Path
+from urllib.parse import urlparse
+import httpx
 from django.conf import settings
+from django.core.files.base import ContentFile
 from rest_framework import generics, permissions, parsers
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from apps.restaurant.models import RestaurantStaff
 from apps.restaurant.permissions import is_restaurant_role
-from .models import Eat, Category
+from .models import Eat, Category, extract_provider_model_url
 from .serializers import EatSerializer, CreateEatSerializer, CategorySerializer
 from .permissions import IsMineEat
 from utils.ai import api
@@ -80,8 +84,25 @@ class CheckTaskAPIView(APIView):
 
         model_json = api.show_model(task_id)
         eat.model_json = model_json
-        eat.save(update_fields=["model_json"])
-        return Response(model_json, status=200)
+        update_fields = ["model_json"]
+
+        # The provider's URL is a presigned link that expires in ~1 hour, so
+        # it can't be served to customers long-term - download it once into
+        # our own storage the moment generation finishes.
+        if not eat.model_file:
+            provider_url = extract_provider_model_url(model_json)
+            if provider_url:
+                try:
+                    resp = httpx.get(provider_url, timeout=60.0, follow_redirects=True)
+                    resp.raise_for_status()
+                    filename = Path(urlparse(provider_url).path).name or f"eat-{eat.id}.glb"
+                    eat.model_file.save(filename, ContentFile(resp.content), save=False)
+                    update_fields.append("model_file")
+                except httpx.HTTPError:
+                    pass  # transient network/provider issue - retry on next check
+
+        eat.save(update_fields=update_fields)
+        return Response(EatSerializer(eat).data, status=200)
 
 
 class CategoryListCreateAPIView(generics.ListCreateAPIView):

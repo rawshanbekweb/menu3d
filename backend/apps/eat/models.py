@@ -4,6 +4,41 @@ from decimal import Decimal
 from apps.restaurant.models import Restaurant
 
 
+def extract_provider_model_url(data):
+    """
+    Extract the generated .glb URL from a 3daistudio job-status payload.
+    On success the payload looks like:
+        {"status": "FINISHED", "results": [{"asset": "https://.../x.glb",
+         "asset_type": "3D_MODEL"}]}
+    Note: this URL is a short-lived presigned link (expires in ~1 hour) -
+    it must be downloaded and re-hosted (see Eat.model_file), never stored
+    or served as-is long-term.
+    """
+    data = data or {}
+    for key in ("model_url", "glb_url", "url", "output_url"):
+        value = data.get(key)
+        if value:
+            return value
+
+    def extract(entry):
+        if not isinstance(entry, dict):
+            return None
+        for key in ("asset", "asset_url", "model_url", "glb_url", "url"):
+            value = entry.get(key)
+            if value:
+                return value
+        return None
+
+    for container_key in ("results", "result"):
+        container = data.get(container_key)
+        entries = container if isinstance(container, list) else [container]
+        for entry in entries:
+            value = extract(entry)
+            if value:
+                return value
+    return None
+
+
 class Category(models.Model):
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name="categories")
     name = models.CharField(max_length=100)
@@ -28,6 +63,10 @@ class Eat(models.Model):
     image = models.ImageField(upload_to="eat/")
     task_json = models.JSONField(default=dict)
     model_json = models.JSONField(default=dict)
+    # The provider's own .glb URL (model_json's "results[].asset") is a
+    # presigned link that expires in ~1 hour - it gets downloaded once into
+    # our own storage here so customers always have a working, permanent URL.
+    model_file = models.FileField(upload_to="models/", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -36,35 +75,9 @@ class Eat(models.Model):
 
     @property
     def model_url(self):
-        """
-        Extract the generated .glb URL from the 3daistudio job-status payload.
-        On success the payload looks like:
-            {"status": "FINISHED", "results": [{"asset": "https://.../x.glb",
-             "asset_type": "3D_MODEL"}]}
-        """
-        data = self.model_json or {}
-        for key in ("model_url", "glb_url", "url", "output_url"):
-            value = data.get(key)
-            if value:
-                return value
-
-        def extract(entry):
-            if not isinstance(entry, dict):
-                return None
-            for key in ("asset", "asset_url", "model_url", "glb_url", "url"):
-                value = entry.get(key)
-                if value:
-                    return value
-            return None
-
-        for container_key in ("results", "result"):
-            container = data.get(container_key)
-            entries = container if isinstance(container, list) else [container]
-            for entry in entries:
-                value = extract(entry)
-                if value:
-                    return value
-        return None
+        if self.model_file:
+            return self.model_file.url
+        return extract_provider_model_url(self.model_json)
 
     @property
     def model_status(self):
